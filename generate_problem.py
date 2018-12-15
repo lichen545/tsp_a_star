@@ -12,7 +12,6 @@ def generate_input(n, filename):
             f.write("{p0} {p1}\n".format(p0=randint(MIN, MAX), p1=randint(MIN, MAX)))
 
 if __name__ == "__main__":
-    # Write the input files for the optimal solution first.
     n = int(sys.argv[1])
     filename = "tsp{}.txt".format(n)
     generate_input(n, filename)
