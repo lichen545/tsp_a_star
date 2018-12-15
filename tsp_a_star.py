@@ -1,4 +1,5 @@
 import sys
+import argparse
 import timeit
 import math
 import heapq
@@ -46,7 +47,7 @@ def heuristic(a, b):
     (x2, y2) = b
     return abs(x1 - x2) + abs(y1 - y2)
 
-# implemented using a priority queue (pop from node, add neighbors of node to frontier, repeat)
+# implemented using a priority queue (pop node from frontier, add neighbors of node to frontier, repeat)
 def a_star_search(graph, start, goal):
     frontier = PriorityQueue()
     frontier.put(start, 0)
@@ -73,8 +74,21 @@ def a_star_search(graph, start, goal):
     
     return came_from, cost_so_far
 
-def main():
-    return
+def main(args):
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--heuristic', nargs='+', required=True, type=str)
+    parser.add_argument('--problem', required=True, type=str)
+    args = parser.parse_args()
+
+    with open(args.problem, 'rb') as file:
+        lines = file.readlines()
+
+    input = Graph()
+    cities = set()
+    for line in lines[1:]:
+        x, y = line.split()
+        cities.add((x,y))
+        
 
 if __name__ == "__main__":
-    main()
+    main(sys.argv[1:])
