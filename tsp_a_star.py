@@ -13,7 +13,7 @@ class Graph:
         ...
     }
      '''
-     # adjacency li`s`t for all edges
+     # adjacency list for all edges
     def __init__(self):
         self.edges = {}
     
@@ -40,12 +40,13 @@ class PriorityQueue:
 def mahattan_distance(p1, p2):
     return abs(p1[0]-p2[0]) + abs(p1[1]-p2[1])
 
+# used to calculate cost of distance from here to there
 def heuristic(a, b):
     (x1, y1) = a
     (x2, y2) = b
     return abs(x1 - x2) + abs(y1 - y2)
 
-
+# implemented using a priority queue (pop from node, add neighbors of node to frontier, repeat)
 def a_star_search(graph, start, goal):
     frontier = PriorityQueue()
     frontier.put(start, 0)
@@ -60,10 +61,12 @@ def a_star_search(graph, start, goal):
         if current == goal:
             break
         
+        # add all unexplored neighbors of current node to priority queue
         for next in graph.neighbors(current):
             new_cost = cost_so_far[current] + graph.cost(current, next)
             if next not in cost_so_far or new_cost < cost_so_far[next]:
                 cost_so_far[next] = new_cost
+                # nodes with lower from_cost + heuristic_cost have higher priority (lower number)
                 priority = new_cost + heuristic(goal, next)
                 frontier.put(next, priority)
                 came_from[next] = current
