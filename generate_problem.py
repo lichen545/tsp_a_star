@@ -15,3 +15,4 @@ if __name__ == "__main__":
     n = int(sys.argv[1])
     filename = "tsp{}.txt".format(n)
     generate_input(n, filename)
+    
