@@ -3,51 +3,75 @@ import argparse
 import timeit
 import math
 import heapq
-
+import itertools
 
 # data structure for reading in file and converting to a graph
 class Graph:
-    ''' 
     # source and sink are equivalent to startpt (1 in this example)
     # node: [(neighbor, cost)]
+    # {   
+    #     ('source', {}): [ ((2, {2}), d(1,2)), ((3, {3}), d(1,3)), ((4, {4}), d(1,4)) ] 
+    #     (2, {2}): [ ((3, {2,3}), d(2,3)), ((4, {2,4}), d(2,4)) ],
+    #     ...,
+    #     ((3, {2,3}): [ ((4, {2,3,4}), d(3,4)) ],
+    #     ...,
+    #     (4, {2,3,4}): [ ("sink", d(4,1)) ],
+    # }
+    ''' 
+    (x, S): starting from 1, path min cost ends at vertex x, passing vertices in set S exactly once
+    source and sink are equivalent to startpt
     {   
-        ('source', {}): [ ((2, {2}), d(1,2)), ((3, {3}), d(1,3)), ((4, {4}), d(1,4)) ] 
-        (2, {2}): [ ((3, {2,3}), d(2,3)), ((4, {2,4}), d(2,4)) ],
+        ("source", None): [ (2, None), (3, None), (4, None) ] 
+        (2, None): [ (3, (2)), (4, (2)) ],
         ...,
-        ((3, {2,3}): [ ((4, {2,3,4}), d(3,4)) ],
+        (3, (2)): [ (4, (2,3)) ],
         ...,
-        (4, {2,3,4}): [ ("sink", d(4,1)) ],
+        (4, (2,3)): [ ("sink", (2,3,4)) ],
     }
-     '''
-    # adjacency list for graph
-    def __init__(self, startpt, memo_table):
+
+    '''
+    # adjacency list for graph, takes a start point and a list of cities as input
+    def __init__(self, startpt, cities):
+        self.startpt = startpt
         self.edges = {}
         # add source node with key "source"
-        size = 1
-        connected_points = [x for x in memo_table if x[0] in x[1] and len(x[1]) == size]
-        connected_values = [(x, rectilinear(x[0], startpt)) for x in connected_points]
-        self.edges[('source', {})] = connected_values
+        cities = set(cities)
+        cities.discard(startpt)
+        # create all possible combinations of cities
+        # [[(2,), (3,), (4,)], [(2, 3), (2, 4), (3, 4)], [(2, 3, 4)]]
+        # city_combinations = [list(itertools.combinations(cities, n)) for n in range(1, len(cities) + 1)]
+        # create source node
+        connected_values = [(c, ()) for c in cities]
+        self.edges[('source', None)] = connected_values
         # add rest of the nodes to graph
-        while connected_points:
+        while connected_values:
             tmp = []
-            size += 1
-            for point in connected_points:
-                next_points = [x for x in memo_table if point[0] in x[1] and len(x[1]) == size]
-                next_values = [(x, rectilinear(x[0], point[0])) for x in next_points]
-                tmp += next_points
+            for x,S in connected_values:
+                # add x to S to get next S
+                next_S = sorted(list(S) + [x])
+                next_S = tuple(next_S)
+                # find cities not in next_S and add them to adjacency list
+                remainder_set = cities.copy() - set(next_S)
+                next_values = [(next_x, next_S) for next_x in remainder_set]
+                tmp += next_values
                 # continue attaching nodes to previous nodes
                 if tmp:
-                    self.edges[point] = next_values
-                    connected_points = tmp
+                    self.edges[(x,S)] = next_values
                 # full set reached, connect to sink node
                 else:
-                    self.edges[point] = [("sink", rectilinear(startpt, point[0]))]
+                    self.edges[(x,S)] = [("sink", next_S)]
+            connected_values = tmp
 
     def neighbors(self, point):
         return self.edges[point]
 
     def cost(self, from_node, to_node):
-        return rectilinear(from_node, to_node)
+        if from_node == "source":
+            return rectilinear(self.startpt, to_node)
+        elif to_node == "sink":
+            return rectilinear(from_node, self.startpt)
+        else:
+            return rectilinear(from_node, to_node)
 
 # wrapper for heapq
 class PriorityQueue:
@@ -68,12 +92,10 @@ def rectilinear(a, b):
     (x2, y2) = b
     return abs(x1 - x2) + abs(y1 - y2)
 
-
 def euclidean(a, b):
     (x_1, y_1) = a
     (x_2, y_2) = b
     return math.sqrt(((x_1 - x_2) ** 2) + ((y_1 - y_2) ** 2))
-
 
 def held_karp(startpt, cities):
     cities = set(cities)
