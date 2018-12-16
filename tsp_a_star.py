@@ -11,7 +11,7 @@ class Graph:
     # source and sink are equivalent to startpt
     # node: [(neighbor, cost)]
     {   
-        'source': [ ((2, {2}), d(1,2)), ((3, {3}), d(1,3)), ((4, {4}), d(1,4)), ] 
+        'source': [ ((2, {2}), d(1,2)), ((3, {3}), d(1,3)), ((4, {4}), d(1,4)) ] 
         (2, {2}): [ ((3, {2,3}), d(2,3)), ((4, {2,4}), d(2,4)) ],
         ...,
         ((3, {2,3}): [ ((4, {2,3,4}), d(3,4)) ],
@@ -20,23 +20,29 @@ class Graph:
     }
      '''
      # adjacency list for all edges
-    def __init__(self, memo_table):
+    def __init__(self, memo_table, startpt):
         self.edges = {}
         # add source node with key "source"
         size = 1
-        initial_points = [x for x in memo_table if x[0] in x[1] and len(x[1]) == size]
-        intiial_values = []
-        self.edges["source"] = initial_points
+        connected_points = [x for x in memo_table if x[0] in x[1] and len(x[1]) == size]
+        connected_values = [(x, rectilinear(x[0], startpt)) for x in connected_points]
+        self.edges["source"] = connected_values
         # add rest of the nodes to graph
-        connected_points = initial_points.copy()
         while connected_points:
             tmp = []
             size += 1
             for point in connected_points:
-                next_points = [x[0] for x in memo_table if point in x[1] and len(x[1]) == size]
-                self.edges[point] = next_points
+                next_points = [x for x in memo_table if point[0] in x[1] and len(x[1]) == size]
+                next_values = [(x, rectilinear(x[0], point[0])) for x in next_points]
+                tmp += next_points
+                # continue attaching nodes to previous nodes
+                if tmp:
+                    self.edges[point] = next_values
+                    connected_points = tmp
+                # full set reached, connect to sink node
+                else:
+                    self.edges[point] = [("sink", rectilinear(startpt, point[0]))]
 
-    
     def neighbors(self, point):
         return self.edges[point]
 
