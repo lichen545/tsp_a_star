@@ -61,17 +61,22 @@ class Graph:
                 else:
                     self.edges[(x,S)] = [("sink", next_S)]
             connected_values = tmp
+    
+    def __repr__(self):
+        return str(self.__dict__)
 
     def neighbors(self, point):
         return self.edges[point]
 
     def cost(self, from_node, to_node):
-        if from_node == "source":
-            return rectilinear(self.startpt, to_node)
-        elif to_node == "sink":
-            return rectilinear(from_node, self.startpt)
+        from_point = from_node[0]
+        to_point = to_node[0]
+        if from_point == "source":
+            return rectilinear(self.startpt, to_point)
+        elif to_point == "sink":
+            return rectilinear(from_point, self.startpt)
         else:
-            return rectilinear(from_node, to_node)
+            return rectilinear(from_point, to_point)
 
 # wrapper for heapq
 class PriorityQueue:
@@ -151,12 +156,14 @@ def a_star_search(graph, start, goal):
         
         # add all unexplored neighbors of current node to priority queue
         for next in graph.neighbors(current):
-            new_cost = cost_so_far[current] + next[1]
+            print("CURRENT:", current)
+            print("NEXT:", next, end='\n\n')
+            new_cost = cost_so_far[current] + graph.cost(current, next)
             # update cost of next neighbor if applicable
             if next not in cost_so_far or new_cost < cost_so_far[next]:
                 cost_so_far[next] = new_cost
                 # nodes with lower from_cost + heuristic_cost have higher priority (lower number)
-                priority = new_cost + heuristic(goal, next)
+                priority = new_cost # + heuristic(goal, next)
                 frontier.put(next, priority)
                 came_from[next] = current
     
@@ -172,15 +179,21 @@ def main(args):
     with open(args.problem, 'rb') as file:
         lines = file.readlines()
 
+    # exits if input file is empty
+    if len(lines) <= 1:
+        print("Error: empty input")
+        exit(1)
+
     cities = []
     for line in lines[1:]:
         x, y = line.split()
-        cities.append((x,y))
+        cities.append( (int(x), int(y)) )
     
     start = cities[0]
-    memo = held_karp(start, cities)
-    a_star_graph = Graph(cities[0], memo)
-    print(a_star_search(a_star_graph, ('source', {}), "sink"))
+    # memo = held_karp(start, cities)
+    a_star_graph = Graph(start, cities)
+    # print(a_star_graph)
+    print(a_star_search(a_star_graph, ("source", None), "sink"))
 
 if __name__ == "__main__":
     main(sys.argv[1:])
