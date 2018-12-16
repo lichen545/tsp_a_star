@@ -8,10 +8,10 @@ import heapq
 # data structure for reading in file and converting to a graph
 class Graph:
     ''' 
-    # source and sink are equivalent to startpt
+    # source and sink are equivalent to startpt (1 in this example)
     # node: [(neighbor, cost)]
     {   
-        'source': [ ((2, {2}), d(1,2)), ((3, {3}), d(1,3)), ((4, {4}), d(1,4)) ] 
+        ('source', {}): [ ((2, {2}), d(1,2)), ((3, {3}), d(1,3)), ((4, {4}), d(1,4)) ] 
         (2, {2}): [ ((3, {2,3}), d(2,3)), ((4, {2,4}), d(2,4)) ],
         ...,
         ((3, {2,3}): [ ((4, {2,3,4}), d(3,4)) ],
@@ -19,14 +19,14 @@ class Graph:
         (4, {2,3,4}): [ ("sink", d(4,1)) ],
     }
      '''
-     # adjacency list for all edges
-    def __init__(self, memo_table, startpt):
+    # adjacency list for graph
+    def __init__(self, startpt, memo_table):
         self.edges = {}
         # add source node with key "source"
         size = 1
         connected_points = [x for x in memo_table if x[0] in x[1] and len(x[1]) == size]
         connected_values = [(x, rectilinear(x[0], startpt)) for x in connected_points]
-        self.edges["source"] = connected_values
+        self.edges[('source', {})] = connected_values
         # add rest of the nodes to graph
         while connected_points:
             tmp = []
@@ -78,6 +78,7 @@ def euclidean(a, b):
 def held_karp(startpt, cities):
     cities = set(cities)
     cities.remove(startpt)
+    cities = tuple(cities)
 
     # Quick and dirty memoization
     lookuptable = {}
@@ -123,12 +124,13 @@ def a_star_search(graph, start, goal):
     while not frontier.empty():
         current = frontier.get()
         
-        if current == goal:
+        if current[0] == goal:
             break
         
         # add all unexplored neighbors of current node to priority queue
         for next in graph.neighbors(current):
-            new_cost = cost_so_far[current] + graph.cost(current, next)
+            new_cost = cost_so_far[current] + next[1]
+            # update cost of next neighbor if applicable
             if next not in cost_so_far or new_cost < cost_so_far[next]:
                 cost_so_far[next] = new_cost
                 # nodes with lower from_cost + heuristic_cost have higher priority (lower number)
@@ -141,19 +143,22 @@ def a_star_search(graph, start, goal):
 
 def main(args):
     parser = argparse.ArgumentParser()
-    parser.add_argument('--heuristic', nargs='+', required=True, type=str)
+    # parser.add_argument('--heuristic', nargs='+', required=True, type=str)
     parser.add_argument('--problem', required=True, type=str)
     args = parser.parse_args()
 
     with open(args.problem, 'rb') as file:
         lines = file.readlines()
 
-    input = Graph()
-    cities = set()
+    cities = []
     for line in lines[1:]:
         x, y = line.split()
-        cities.add((x,y))
-        
+        cities.append((x,y))
+    
+    start = cities[0]
+    memo = held_karp(start, cities)
+    a_star_graph = Graph(cities[0], memo)
+    print(a_star_search(a_star_graph, ('source', {}), "sink"))
 
 if __name__ == "__main__":
     main(sys.argv[1:])
