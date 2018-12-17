@@ -124,7 +124,7 @@ def held_karp(start_point, cities):
 
     return lookuptable
 
-# heuristic for estimating cost of going from a node to goal state via taking the smallest distance and multiplying by number of cities left to visit
+# heuristic for estimating cost of going from a node to goal state via taking the smallest distance and multiplying by r = number of cities left to visit 
 def naive_euclidean(graph, next):
     # find all nodes that have been traversed
     if next[0] != 'sink':
@@ -138,9 +138,10 @@ def naive_euclidean(graph, next):
     # print("===PAIRS===", pairs)
     distances = [euclidean(p1,p2) for p1,p2 in pairs]
     
-    return min(distances) * len(remainder)
+    r = len(remainder)
+    return min(distances) * r
 
-# heuristic for estimating cost of going from a node to goal state via taking the average of the remaining n smallest distances, where n = # of cities left to visit
+# heuristic for estimating cost of going from a node to goal state via taking the average of the remaining r smallest distances, where r = number of cities left to visit
 def avg_remaining(graph, next):
     # find all nodes that have been traversed
     if next[0] != 'sink':
@@ -151,13 +152,14 @@ def avg_remaining(graph, next):
     # find all remaining points still to be explored
     remainder = graph.cities - set(traversed)
     pairs = list(itertools.combinations(remainder, 2))
-    distances = [euclidean(p1,p2) for p1,p2 in pairs]
+    distances = [rectilinear(p1,p2) for p1,p2 in pairs]
     distances.sort()
 
-    return distances[:len(remainder)] / len(remainder)
+    r = len(remainder)
+    return sum(distances[:r]) / r
 
 # implemented using a priority queue (pop node from frontier, add neighbors of node to frontier, repeat)
-def a_star_search(graph, start, goal):
+def a_star_search(graph, start, goal, heuristic):
     frontier = PriorityQueue()
     frontier.put(start, 0)
     came_from = {}
@@ -180,7 +182,7 @@ def a_star_search(graph, start, goal):
             if next not in cost_so_far or new_cost < cost_so_far[next]:
                 cost_so_far[next] = new_cost
                 # nodes with lower from_cost + heuristic_cost have higher priority (lower number)
-                priority = new_cost + avg_remaining(graph, next)
+                priority = new_cost + heuristic(graph, next)
                 frontier.put(next, priority)
                 came_from[next] = current
     
@@ -188,11 +190,11 @@ def a_star_search(graph, start, goal):
 
 
 def main(args):
-    # FUNCTION_MAP = {'naive_euclidean' : my_top20_func,
-    #                 'avg_remaining' : my_listapps_func }
+    FUNCTION_MAP = {'naive_euclidean' : naive_euclidean,
+                    'avg_remaining' : avg_remaining}
 
     parser = argparse.ArgumentParser()
-    # parser.add_argument('--heuristic', nargs='+', required=True, type=str)
+    parser.add_argument('--heuristic', choices=FUNCTION_MAP.keys(), required=True, type=str)
     parser.add_argument('--problem', required=True, type=str)
     args = parser.parse_args()
 
@@ -216,7 +218,7 @@ def main(args):
     pprint.pprint(a_star_graph.__dict__)
     print()
 
-    came_from, cost_so_far = a_star_search(a_star_graph, ("source", None), "sink")
+    came_from, cost_so_far = a_star_search(a_star_graph, ("source", None), "sink", FUNCTION_MAP[args.heuristic])
     print("FINAL PATH:")
     pprint.pprint(came_from)
     print()
