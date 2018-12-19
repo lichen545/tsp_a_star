@@ -32,7 +32,7 @@ class Graph:
         cities.discard(start_point)
         # create source node
         connected_values = [(c, ()) for c in cities]
-        self.edges[('source', None)] = connected_values
+        self.edges[(start_point, None)] = connected_values
         # add rest of the nodes to graph
         while connected_values:
             tmp = []
@@ -49,7 +49,7 @@ class Graph:
                     self.edges[(x,S)] = next_values
                 # full set reached, connect to sink node
                 else:
-                    self.edges[(x,S)] = [("sink", next_S)]
+                    self.edges[(x,S)] = [(start_point, next_S)]
             connected_values = tmp
     
     def __str__(self):
@@ -63,12 +63,7 @@ class Graph:
     def cost(self, from_node, to_node):
         from_point = from_node[0]
         to_point = to_node[0]
-        if from_point == "source":
-            return rectilinear(self.start_point, to_point)
-        elif to_point == "sink":
-            return rectilinear(from_point, self.start_point)
-        else:
-            return rectilinear(from_point, to_point)
+        return rectilinear(from_point, to_point)
 
 # wrapper for heapq
 class PriorityQueue:
@@ -87,7 +82,7 @@ class PriorityQueue:
 # heuristic for estimating cost of going from a node to goal state via taking the smallest distance and multiplying by r = number of cities left to visit 
 def naive_euclidean(graph, next):
     # find all nodes that have been traversed
-    if next[0] != 'sink':
+    if next[0] != graph.start_point:
         traversed = next[1] + (next[0])
     # at goal state, cost is 0
     else:
@@ -104,7 +99,7 @@ def naive_euclidean(graph, next):
 # heuristic for estimating cost of going from a node to goal state via taking the average of the remaining r smallest distances, where r = number of cities left to visit
 def avg_remaining(graph, next):
     # find all nodes that have been traversed
-    if next[0] != 'sink':
+    if next[0] != graph.start_point:
         traversed = next[1] + (next[0])
     # at goal state, cost is 0
     else:
@@ -127,16 +122,17 @@ def a_star_search(graph, start, goal, heuristic):
     came_from[start] = None
     cost_so_far[start] = 0
     
+    iter = 0
     while not frontier.empty():
         current = frontier.get()
         
-        if current[0] == goal:
+        if current[0] == goal and iter != 0:
             break
         
         # add all unexplored neighbors of current node to priority queue
         for next in graph.neighbors(current):
-            print("CURRENT:", current)
-            print("NEXT:", next, end='\n\n')
+            # print("CURRENT:", current)
+            # print("NEXT:", next, end='\n\n')
             new_cost = cost_so_far[current] + graph.cost(current, next)
             # update cost of next neighbor if applicable
             if next not in cost_so_far or new_cost < cost_so_far[next]:
@@ -145,6 +141,9 @@ def a_star_search(graph, start, goal, heuristic):
                 priority = new_cost + heuristic(graph, next)
                 frontier.put(next, priority)
                 came_from[next] = current
+        
+        # since the keys for the start and end states are the same, add an iteration tracker to make sure sure algo doesn't immediate return
+        iter += 1
     
     return came_from, cost_so_far
 
@@ -181,7 +180,7 @@ def main(args):
     print("HELD-KARP GRAPH:")
     pprint.pprint(a_star_graph.__dict__)
     print()
-    came_from, cost_so_far = a_star_search(a_star_graph, ("source", None), "sink", FUNCTION_MAP[args.heuristic])
+    came_from, cost_so_far = a_star_search(a_star_graph, (start, None), start, FUNCTION_MAP[args.heuristic])
     print("FINAL PATH:")
     pprint.pprint(came_from)
     print()
