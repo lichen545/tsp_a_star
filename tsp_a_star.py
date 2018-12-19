@@ -5,6 +5,8 @@ import heapq
 import itertools
 import pprint
 import time
+import operator
+from collections import OrderedDict
 
 from utils import *
 
@@ -117,8 +119,8 @@ def avg_remaining(graph, next):
 def a_star_search(graph, start, goal, heuristic):
     frontier = PriorityQueue()
     frontier.put(start, 0)
-    came_from = {}
-    cost_so_far = {}
+    came_from = OrderedDict()
+    cost_so_far = OrderedDict()
     came_from[start] = None
     cost_so_far[start] = 0
     
@@ -175,17 +177,26 @@ def main(args):
     # start tracking execution time
     start_time = time.time()
 
-    # create held-karp graph from list and run A* search
+    # create held-karp graph from list and run A* search, 
     a_star_graph = Graph(start, cities)
+    came_from, cost_so_far = a_star_search(a_star_graph, (start, None), start, FUNCTION_MAP[args.heuristic])
+
+    # comment out printing when testing for performance
     print("HELD-KARP GRAPH:")
     pprint.pprint(a_star_graph.__dict__)
     print()
-    came_from, cost_so_far = a_star_search(a_star_graph, (start, None), start, FUNCTION_MAP[args.heuristic])
-    print("FINAL PATH:")
+    print("NODES EXPANDED:")
     pprint.pprint(came_from)
     print()
-    print("TOTAL COST:")
+    print("INTERMEDIATE COSTS:")
     pprint.pprint(cost_so_far)
+    print()
+
+    print("FINAL COST:")
+    final_keys = [x for x in cost_so_far.keys() if start in x]
+    final_items = [cost_so_far[x] for x in final_keys]
+    final_cost = max(final_items)
+    print(final_cost)
     print()
 
     # print total execution time

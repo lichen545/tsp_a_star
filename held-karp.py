@@ -81,6 +81,9 @@ def main(arg):
         cities.add( (int(x), int(y)) )
     cities = list(cities)
     
+    # start tracking execution time
+    start_time = time.time()
+
     # convert to adjacency matrix
     adjacency_matrix = [[rectilinear(row_city, col_city) for col_city in cities] for row_city in cities]
 
@@ -89,9 +92,6 @@ def main(arg):
     for row in adjacency_matrix:
         print(row)
     print()
-
-    # start tracking execution time
-    start_time = time.time()
 
     cost, path = held_karp(adjacency_matrix, cities)
     print("FINAL PATH:", path)
