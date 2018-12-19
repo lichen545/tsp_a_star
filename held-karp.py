@@ -2,6 +2,7 @@ import itertools
 import random
 import sys
 import pprint
+import time
 
 from utils import *
 
@@ -87,11 +88,19 @@ def main(arg):
     print("ADJACENCY MATRIX:")
     for row in adjacency_matrix:
         print(row)
-
     print()
+
+    # start tracking execution time
+    start_time = time.time()
+
     cost, path = held_karp(adjacency_matrix, cities)
     print("FINAL PATH:", path)
     print("TOTAL COST:", cost)
+    print()
+
+    # print total execution time
+    time_elapsed = time.time() - start_time 
+    print_standardized_time(time_elapsed)
 
 if __name__ == "__main__":
     main(sys.argv[1])

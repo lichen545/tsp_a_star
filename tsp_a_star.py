@@ -4,6 +4,7 @@ import math
 import heapq
 import itertools
 import pprint
+import time
 
 from utils import *
 
@@ -172,6 +173,9 @@ def main(args):
         cities.append( (int(x), int(y)) )
     start = cities[0]
     
+    # start tracking execution time
+    start_time = time.time()
+
     # create held-karp graph from list and run A* search
     a_star_graph = Graph(start, cities)
     print("HELD-KARP GRAPH:")
@@ -183,7 +187,11 @@ def main(args):
     print()
     print("TOTAL COST:")
     pprint.pprint(cost_so_far)
+    print()
 
+    # print total execution time
+    time_elapsed = time.time() - start_time 
+    print_standardized_time(time_elapsed)
 
 if __name__ == "__main__":
     main(sys.argv[1:])
