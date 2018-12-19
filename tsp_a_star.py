@@ -1,10 +1,11 @@
 import sys
 import argparse
-import timeit
 import math
 import heapq
 import itertools
 import pprint
+
+from utils import *
 
 # data structure for reading in file and converting to a graph
 class Graph:
@@ -82,48 +83,6 @@ class PriorityQueue:
     def get(self):
         return heapq.heappop(self.elements)[1]
 
-def rectilinear(a, b):
-    (x1, y1) = a
-    (x2, y2) = b
-    return abs(x1 - x2) + abs(y1 - y2)
-
-def euclidean(a, b):
-    (x_1, y_1) = a
-    (x_2, y_2) = b
-    return math.sqrt(((x_1 - x_2) ** 2) + ((y_1 - y_2) ** 2))
-
-# implementation of the held-karp algorithm for solving TSP
-def held_karp(start_point, cities):
-    cities = set(cities)
-    cities.remove(start_point)
-    cities = tuple(cities)
-
-    # Quick and dirty memoization
-    lookuptable = {}
-
-    def min_dist(loc, path):
-        """
-        Minimum distance starting at city start_point, visiting all cities in path,
-        and finishing at city loc
-        """
-        if (loc, path) not in lookuptable:
-
-            if len(path) == 1 and loc in path:
-                lookuptable[(loc, path)] = rectilinear(start_point, loc)
-            else:
-                # Enumerate all routes to this point
-                newpath = path - loc
-                # Find minimum
-                lookuptable[(loc, path)] = min(
-                    [min_dist(x, newpath) + rectilinear(x, loc)
-                     for x in newpath])
-
-        return lookuptable[(loc, path)]
-
-    [min_dist(x, cities) for x in cities]
-
-    return lookuptable
-
 # heuristic for estimating cost of going from a node to goal state via taking the smallest distance and multiplying by r = number of cities left to visit 
 def naive_euclidean(graph, next):
     # find all nodes that have been traversed
@@ -198,32 +157,33 @@ def main(args):
     parser.add_argument('--problem', required=True, type=str)
     args = parser.parse_args()
 
-    with open(args.problem, 'rb') as file:
-        lines = file.readlines()
+    with open(args.problem, 'rb') as input_file:
+        lines = input_file.readlines()
 
     # exits if input file is empty
     if len(lines) <= 1:
         print("Error: empty input")
         exit(1)
 
+    # parse input file for list of cities
     cities = []
     for line in lines[1:]:
         x, y = line.split()
         cities.append( (int(x), int(y)) )
-    
     start = cities[0]
-    # memo = held_karp(start, cities)
+    
+    # create held-karp graph from list and run A* search
     a_star_graph = Graph(start, cities)
     print("HELD-KARP GRAPH:")
     pprint.pprint(a_star_graph.__dict__)
     print()
-
     came_from, cost_so_far = a_star_search(a_star_graph, ("source", None), "sink", FUNCTION_MAP[args.heuristic])
     print("FINAL PATH:")
     pprint.pprint(came_from)
     print()
     print("TOTAL COST:")
     pprint.pprint(cost_so_far)
+
 
 if __name__ == "__main__":
     main(sys.argv[1:])

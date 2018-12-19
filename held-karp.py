@@ -1,11 +1,13 @@
 import itertools
 import random
 import sys
+import pprint
 
+from utils import *
 
-def held_karp(dists):
+def held_karp(dists, cities):
     """
-    Takes in an distance matrix and returns a tuple, (cost, path)
+    Takes in an adjacency matrix and returns a tuple, (cost, path)
     """
     n = len(dists)
 
@@ -38,23 +40,58 @@ def held_karp(dists):
                     res.append((C[(prev, m)][0] + dists[m][k], m))
                 C[(bits, k)] = min(res)
 
-    # We're interested in all bits but the least significant (the start state)
+    # grab all bits except the least significant (the start state)
     bits = (2**n - 1) - 1
-    return
+
+    # Calculate optimal cost
+    res = []
+    for k in range(1, n):
+        res.append((C[(bits, k)][0] + dists[k][0], k))
+    opt, parent = min(res)
+
+    # Backtrack to find full path
+    path = []
+    for _ in range(n - 1):
+        path.append(parent)
+        new_bits = bits & ~(1 << parent)
+        _, parent = C[(bits, parent)]
+        bits = new_bits
+
+    # Add implicit start state
+    path.append(0)
+    # correct ordering and convert to coordinates
+    path.reverse()
+    return opt, list(map(lambda x: cities[x], path))
 
 
-if __name__ == '__main__':
-    arg = sys.argv[1]
+def main(arg):
+    with open(arg, 'rb') as input_file:
+        lines = input_file.readlines()
 
-    if arg.endswith('.csv'):
-        dists = read_distances(arg)
-    else:
-        dists = generate_distances(int(arg))
+    # exits if input file is empty
+    if len(lines) <= 1:
+        print("Error: empty input")
+        exit(1)
+    
+    # read input and store list of cities
+    cities = set()
+    for line in lines[1:]:
+        x, y = line.split()
+        cities.add( (int(x), int(y)) )
+    cities = list(cities)
+    
+    # convert to adjacency matrix
+    adjacency_matrix = [[rectilinear(row_city, col_city) for col_city in cities] for row_city in cities]
 
     # Pretty-print the distance matrix
-    for row in dists:
-        print(''.join([str(n).rjust(3, ' ') for n in row]))
+    print("ADJACENCY MATRIX:")
+    for row in adjacency_matrix:
+        print(row)
 
-    print('')
+    print()
+    cost, path = held_karp(adjacency_matrix, cities)
+    print("FINAL PATH:", path)
+    print("TOTAL COST:", cost)
 
-    print(held_karp(dists))
+if __name__ == "__main__":
+    main(sys.argv[1])
